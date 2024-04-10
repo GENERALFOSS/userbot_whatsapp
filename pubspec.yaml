@@ -1,0 +1,54 @@
+name: userbot_whatsapp
+description: GENERAL FOSS Userbot Whatsapp simple by GENERAL FOSS dev.
+version: 0.0.0
+repository: https://github.com/generalfoss/userbot_whatsapp.git
+homepage: https://github.com/generalfoss/userbot_whatsapp.git
+issue_tracker: https://github.com/generalfoss/userbot_whatsapp.git 
+
+environment:
+  sdk: ^3.2.3
+
+# Add regular dependencies here.
+dependencies:
+  general_lib: ^0.0.32
+  http: ^1.1.2
+  mason_logger: ^0.2.12
+  packagex: ^0.0.50
+  path: ^1.9.0
+  system_info_fetch: ^0.0.14
+  telegram_client: ^0.8.2
+  translate_client: ^0.0.2
+  # path: ^1.8.0
+
+dev_dependencies:
+  lints: ^2.1.0
+  msix: ^3.16.7
+  test: ^1.24.0
+
+packagex:
+  name: userbot_whatsapp
+  dart_target: userbot_whatsapp
+  flutter_target: main
+  dart_name: userbot_whatsapp
+  flutter_name: userbot_whatsapp
+  is_without_platform_name: true
+  flutter_commands:
+    obfuscate: true
+    split-debug-info: "0.0.5"
+    build-name: "0.0.5"
+    build-number: 40
+    split-per-abi: true
+    no-tree-shake-icons: false
+
+  project_id: "azkadev.packagex"
+  github_username: azkadev
+  github_is_org: false
+  
+
+msix_config: 
+  display_name: userbot_whatsapp
+  install_certificate: false
+  # publisher_display_name: Azkadev
+  # identity_name: org.azkadev.azka_userbot_whatsapp
+  # msix_version: 0.0.0.0
+  # capabilities: internetClient, location, microphone, webcam

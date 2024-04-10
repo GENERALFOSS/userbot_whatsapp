@@ -1,5 +1,4 @@
-# Userbot Telegram
-
+# Userbot Whatsapp
 
 ## Development
 
@@ -16,7 +15,7 @@ cd userbot_whatsapp
 dart run bin/userbot_whatsapp.dart
 ```
 
-then fill in the required data / cellphone number / telegram bot token
+then fill in the required data / cellphone number / or scan qr code
 
 <!-- START GLOBAL CORPORATION -->
 <h3 align="center">
