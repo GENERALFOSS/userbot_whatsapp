@@ -96,7 +96,7 @@ GITHUB: https://github.com/generalfoss/userbot_whatsapp
     event_name: wa.event_update,
     onUpdate: (UpdateWhatsAppClient updateWhatsAppClient) async {
       Map update = updateWhatsAppClient.rawData;
- 
+
       WhatsAppClientData whatsAppClientData = updateWhatsAppClient.whatsappClientData;
 
       if (update["@type"] == "updateAuthorizationState") {
