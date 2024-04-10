@@ -35,9 +35,14 @@ Bukan maksud kami menipu itu karena harga yang sudah di kalkulasi + bantuan tiba
 import 'dart:async';
 
 import 'package:system_info_fetch/system_info_fetch.dart';
-import 'package:telegram_client/telegram_client/telegram_client.dart';
+import 'package:whatsapp_client/whatsapp_client.dart';
+import 'package:whatsapp_client/whatsapp_client/update_whatsapp_client.dart';
 
-FutureOr<dynamic> updateMessage({required Map msg, required TelegramClient tg, required UpdateTelegramClient updateTelegramClient}) async {
+FutureOr<dynamic> updateMessage({
+  required Map msg,
+  required WhatsAppClient wa,
+  required UpdateWhatsAppClient updateWhatsAppClient,
+}) async {
   String caption = "";
   if (msg["caption"] is String) {
     caption = msg["caption"];
@@ -60,70 +65,59 @@ FutureOr<dynamic> updateMessage({required Map msg, required TelegramClient tg, r
   if (chat_type.isEmpty) {
     return null;
   }
-  if (isOutgoing) {
-    isAdmin = true;
-  } else {
-    if (updateTelegramClient.telegramClientData.is_bot) {
-      isAdmin = true;
-    }
-  }
-
   Map msg_from = msg["from"];
   Map msg_chat = msg["chat"];
 
-  int msg_id = (msg["id"] is int) ? (msg["id"] as int) : 0;
-  int from_id = msg["from"]["id"];
-  int chat_id = msg["chat"]["id"];
+  String msg_id = (msg["id"] is String) ? (msg["id"] as String) : "";
+  String from_id = msg["from"]["id"];
+  String chat_id = msg["chat"]["id"];
 
   if (msg["chat"]["type"] is String == false) {
     msg["chat"]["type"] = "";
   }
+  if (isOutgoing) {
+    isAdmin = true;
+  } else {}
+
   if (isAdmin == false) {
     return;
-  }
-  if (RegExp(r"^((/)?me)", caseSensitive: false).hasMatch(caption_msg)) {
-    return await tg.request(
-      parameters: {
-        "@type": "sendMessage",
-        "chat_id": chat_id,
-        "text": "Hai: ${updateTelegramClient.telegramClientData.is_bot}",
-      },
-      telegramClientData: updateTelegramClient.telegramClientData,
-    );
-  }
+  } 
+
   if (RegExp(r"^((/)?start)", caseSensitive: false).hasMatch(caption_msg)) {
-    return await tg.request(
+    return await wa.invoke(
       parameters: {"@type": "sendMessage", "chat_id": chat_id, "text": "Hai Saya robot"},
-      telegramClientData: updateTelegramClient.telegramClientData,
+      whatsAppClientData: updateWhatsAppClient.whatsappClientData,
     );
   }
   if (RegExp(r"^((/)?ping)$", caseSensitive: false).hasMatch(caption_msg)) {
-    return await tg.request(
+    Map res = await wa.invoke(
       parameters: {"@type": "sendMessage", "chat_id": chat_id, "text": "PONG"},
-      telegramClientData: updateTelegramClient.telegramClientData,
+      whatsAppClientData: updateWhatsAppClient.whatsappClientData,
     );
+ 
+    return res;
   }
 
   if (RegExp(r"^((/)?systeminfo|info|env|neofetch|pfetch)$", caseSensitive: false).hasMatch(caption_msg)) {
-    return await tg.request(
+    return await wa.invoke(
       parameters: {
         "@type": "sendMessage",
         "chat_id": chat_id,
         "text": "SystemInfo: ${SystemInfoFetch.toMessage()}",
       },
-      telegramClientData: updateTelegramClient.telegramClientData,
+      whatsAppClientData: updateWhatsAppClient.whatsappClientData,
     );
   }
 
   RegExp regExp_echo = RegExp(r"^((/)?(echo[ ]+)(.*))", caseSensitive: false);
   if (regExp_echo.hasMatch(caption_msg)) {
-    return await tg.request(
+    return await wa.invoke(
       parameters: {
         "@type": "sendMessage",
         "chat_id": chat_id,
         "text": caption_msg.replaceAll(RegExp(r"^((/)?(echo[ ]+))", caseSensitive: false), ""),
       },
-      telegramClientData: updateTelegramClient.telegramClientData,
+      whatsAppClientData: updateWhatsAppClient.whatsappClientData,
     );
   }
 }

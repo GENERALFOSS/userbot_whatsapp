@@ -1,3 +1,5 @@
+// ignore_for_file: non_constant_identifier_names
+
 /* <!-- START LICENSE -->
 
 
@@ -30,259 +32,114 @@ Bukan maksud kami menipu itu karena harga yang sudah di kalkulasi + bantuan tiba
 
 
 <!-- END LICENSE --> */
-// ignore_for_file: unnecessary_brace_in_string_interps, non_constant_identifier_names, empty_catches, unused_catch_stack
+// ignore_for_file: unused_local_variable
 
 import 'dart:io';
+import 'dart:typed_data';
 
-import 'package:userbot_whatsapp/userbot_whatsapp.dart';
+import 'package:alfred/alfred.dart';
 import 'package:userbot_whatsapp/logger/logger.dart';
+import 'package:userbot_whatsapp/userbot_whatsapp.dart';
+import 'package:userbot_whatsapp/utils/qr.dart';
+import 'package:whatsapp_client/whatsapp_client.dart';
+import 'package:whatsapp_client/whatsapp_client/update_whatsapp_client.dart';
+import 'package:whatsapp_client/whatsapp_client/whatsapp_client_data.dart';
+import "package:path/path.dart" as path;
 
-import 'package:general_lib/general_lib.dart';
-
-import 'package:path/path.dart';
-import 'package:telegram_client/telegram_client.dart';
-
-void main(List<String> arguments) async {
+void main(List<String> args) async {
   logger.info("""
-GENERAL FOSS USERBOT TELEGRAM
+GENERAL FOSS USERBOT WHATSaPP
 
 SCRIPT BY generalfoss
 GITHUB: https://github.com/generalfoss/userbot_whatsapp
 """
       .trim());
 
-  Directory database_telegram = Directory(join(Directory.current.path, "database_telegram"));
-  if (!database_telegram.existsSync()) {
-    await database_telegram.create(recursive: true);
-  }
+  Alfred app = Alfred(
+    logLevel: LogType.error,
+  );
 
-  Directory database_user = await Future(() async {
-    List<Directory> dirs = Directory(join(database_telegram.path))
-        .listSync()
-        .where((element) {
-          if (element is Directory && RegExp(r"^(client_(.*))$", caseSensitive: false).hasMatch(basename(element.path))) {
-            return true;
-          }
-          return false;
-        })
-        .map((e) => (e as Directory))
-        .toList();
+  int port = int.tryParse(Platform.environment["PORT"] ?? "") ?? 3000;
+  String host = Platform.environment["HOST"] ?? "0.0.0.0";
+  WhatsAppBotApiServer whatsAppBotApiServer = WhatsAppBotApiServer();
 
-    // while (true) {
-    // await Future.delayed(Duration(milliseconds: 100));
-    Directory directory_choose = logger.chooseOne(
-      "Silahkan Pilih Client / Buat Baru",
-      choices: [
-        Directory(join(database_telegram.path, "create_new_client")),
-        ...dirs,
-      ],
-      display: (choice) {
-        return basename(choice.path).replaceAll(RegExp(r"^(client_)", caseSensitive: false), "");
-      },
-    );
-    if (basename(directory_choose.path) == "create_new_client") {
-      while (true) {
-        String new_client_name = logger.prompt("❔️ New Client Name: ").trim();
-        if (new_client_name.isEmpty) {
-          logger.err("Tolong isi data dengan benar!");
-          continue;
-        }
-        Directory directory_new_client = Directory(join(database_telegram.path, "client_${new_client_name}"));
-        if (directory_new_client.existsSync()) {
-          logger.err("Client: ${new_client_name} Sudah Ada");
-          continue;
-        }
-        logger.success("Succes Create Client: ${new_client_name}");
-        return directory_new_client;
-      }
-    }
-    return directory_choose;
-    // }
-  });
-  TelegramClient tg = TelegramClient();
+  await whatsAppBotApiServer.runWaBotApi(
+    host: "0.0.0.0",
+    is_print: false,
+    wa_bot_api_port: 9990,
+    force_install_script: false,
+    is_delete_script_after_run: false,
+  );
 
-  tg.ensureInitialized(
-    telegramClientTdlibOption: TelegramClientTdlibOption(
-      clientOption: {
-        'database_directory': database_user.path,
-        'files_directory': database_user.path,
-        "use_test_dc": false,
-      },
-      invokeTimeOut: Duration(minutes: 1),
-      delayInvoke: Duration(milliseconds: 10),
-      delayUpdate: Duration.zero,
-      timeOutUpdate: 1.0,
+  WhatsAppClient wa = WhatsAppClient();
+  wa.ensureInitialized(
+    whatsAppClientBotApiOption: WhatsAppClientBotApiOption(
+      tokenBot: "",
+      whatsAppUrlWebhook: Uri.parse("http://$host:$port"),
+      // urlWaBotApi: Uri.parse("http://0.0.0.0:9990"),
+      alfred: app,
     ),
   );
+  Directory directory_temp = Directory(path.join(Directory.current.path, "temp"));
 
-  tg.on(
-    event_name: tg.event_update,
-    onUpdate: (updateTelegramClient) async {
-      try {
-        await tg.autoSetData(updateTelegramClient);
+  if (directory_temp.existsSync()) {
+    await directory_temp.delete(
+      recursive: true,
+    );
+  }
 
-        Map? update = await updateTelegramClient.updateRaw(
-          is_lite: false,
-          updataOptionTelegramClient: UpdataOptionTelegramClient(
-            updataMessageTelegramClient: UpdataMessageTelegramClient(
-              bot_is_skip_old_message: false,
-              user_is_skip_old_message: true,
-              skipOldChatTypes: [
-                "private",
-                "group",
-                "channel",
-                "supergroup",
-              ],
-            ),
-          ),
-        );
-
-        if (update == null) {
-          return null;
-        }
-
-        if (update["@type"] == "updateAuthorizationState") {
-          if (update["authorization_state"] is Map) {
-            var authStateType = update["authorization_state"]["@type"];
-
-            if (authStateType == "authorizationStateWaitRegistration") {
-              if (update["authorization_state"]["terms_of_service"] is Map) {
-                Map terms_of_service = update["authorization_state"]["terms_of_service"] as Map;
-                if (terms_of_service["text"] is Map) {
-                  await tg.tdlib.invoke(
-                    "registerUser",
-                    parameters: {
-                      "first_name": "random name",
-                      "last_name": "generalfoss ${DateTime.now().toString()}",
-                    },
-                    clientId: updateTelegramClient.telegramClientData.tdlib_client_id,
-                  );
-                }
-              }
-            }
-
-            if (authStateType == "authorizationStateClosed") {
-              logger.info("silahkan login lagi");
-              exit(1);
-            }
-
-            if (authStateType == "authorizationStateLoggingOut") {}
-
-            if (authStateType == "authorizationStateClosed") {
-              print("close: ${updateTelegramClient.telegramClientData.tdlib_client_id}");
-              await tg.tdlib.exitClientById(updateTelegramClient.telegramClientData.tdlib_client_id, isClose: false);
-            }
-
-            if (authStateType == "authorizationStateWaitPhoneNumber") {
-              while (true) {
-                await Future.delayed(Duration(milliseconds: 10));
-                String phone_number_or_token_bot_procces = logger.prompt("❔️ Nomor Ponsel / Token Bot @botfather", defaultValue: "+628888888888 / 123456789:abcdfghijklmnopqrstuvwxyz ", hidden: false).trim().replaceAll(
-                      RegExp(r"( |\+)", caseSensitive: false),
-                      "",
-                    );
-                if (phone_number_or_token_bot_procces.isEmpty) {
-                  logger.err("Tolong isi data dengan benar!");
-                  continue;
-                }
-                logger.info("Request Code: ${phone_number_or_token_bot_procces}");
-                var res = {};
-
-                if (RegExp("", caseSensitive: false).hasMatch(phone_number_or_token_bot_procces)) {
-                  res = await tg.invoke(
-                    // method: "setAuthenticationPhoneNumber",
-                    parameters: {
-                      "@type": "checkAuthenticationBotToken",
-                      "token": phone_number_or_token_bot_procces,
-                    },
-                    telegramClientData: updateTelegramClient.telegramClientData,
-                  );
-                } else {
-                  res = await tg.invoke(
-                    // method: "setAuthenticationPhoneNumber",
-                    parameters: {
-                      "@type": "setAuthenticationPhoneNumber",
-                      "phone_number": phone_number_or_token_bot_procces,
-                    },
-                    telegramClientData: updateTelegramClient.telegramClientData,
-                  );
-                }
-                if (res["@type"] == "error") {
-                  logger.err(jsonToMessage(res, jsonFullMedia: {}));
-                  continue;
-                }
-                return;
-                // break;
-              }
-            }
-
-            if (authStateType == "authorizationStateWaitCode") {
-              while (true) {
-                await Future.delayed(Duration(milliseconds: 10));
-                String code_procces = logger.prompt("❔️ Code", defaultValue: "12345 ", hidden: false).trim().replaceAll(RegExp(r"( |\+)", caseSensitive: false), "");
-                if (code_procces.isEmpty) {
-                  logger.err("Tolong isi data dengan benar!");
-                  continue;
-                }
-                logger.info("send Code: ${code_procces}");
-                var res = await tg.invoke(
-                  // method: "setAuthenticationPhoneNumber",
-                  parameters: {
-                    "@type": "checkAuthenticationCode",
-                    "code": code_procces,
-                  },
-                  telegramClientData: updateTelegramClient.telegramClientData,
-                );
-
-                if (res["@type"] == "error") {
-                  logger.err(jsonToMessage(res, jsonFullMedia: {}));
-                  continue;
-                }
-                return;
-                // break;
-              }
-            }
-
-            if (authStateType == "setAuthenticationEmailAddress") {}
-
-            if (authStateType == "authorizationStateWaitEmailCode") {}
-
-            if (authStateType == "authorizationStateWaitPassword") {}
-            if (authStateType == "authorizationStateWaitOtherDeviceConfirmation") {}
-            if (authStateType == "authorizationStateReady") {
-              var getMe = await tg.tdlib.getMe(clientId: updateTelegramClient.telegramClientData.tdlib_client_id);
-
-              logger.success(jsonToMessage(getMe["result"], jsonFullMedia: {}));
-              return;
-            }
-          }
-
-          update.printPretty();
-
-          return;
-        }
-
-        if (update["message"] is Map) {
-          Map msg = update["message"];
-          // msg.clone().printPretty();
-          await updateMessage(
-            msg: msg,
-            tg: tg,
-            updateTelegramClient: updateTelegramClient,
-          );
-        }
-      } catch (e, stack) {
-        logger.err("${e} ${stack}");
-      }
-    },
-    onError: (error, stackTrace) {
-      logger.err("${error} ${stackTrace}");
-    },
+  await directory_temp.create(
+    recursive: true,
   );
 
-  Map init_res = await tg.tdlib.initIsolate();
-  if (init_res["@type"] == "error") {
-    init_res.printPretty();
+  wa.on(
+    event_name: wa.event_update,
+    onUpdate: (UpdateWhatsAppClient updateWhatsAppClient) async {
+      Map update = updateWhatsAppClient.rawData;
+ 
+      WhatsAppClientData whatsAppClientData = updateWhatsAppClient.whatsappClientData;
 
-    exit(1);
-  }
+      if (update["@type"] == "updateAuthorizationState") {
+        if (update["authorization_state"] is Map == false) {
+          return;
+        }
+        if (update["authorization_state"]["@type"] == "authorizationStateWaitScanQr") {
+          if (update["authorization_state"]["qr"] is String == false) {
+            return;
+          }
+          String qr_data = update["authorization_state"]["qr"];
+          Uint8List bytes = await qrEncodeToBytes(qr_data);
+
+          if (directory_temp.existsSync() == false) {
+            await directory_temp.create(
+              recursive: true,
+            );
+          }
+          File file = File(path.join(directory_temp.path, "auth.png"));
+          await file.writeAsBytes(bytes);
+          logger.info("Auth Qr Berhasil Di Buat Silahkan Scan Ya: ${path.relative(file.path, from: Directory.current.path)}");
+        }
+      }
+      if (update["@type"] == "updateNewMessage") {
+        if (update["message"] is Map == false) {
+          return;
+        }
+        await updateMessage(
+          msg: update["message"],
+          wa: wa,
+          updateWhatsAppClient: updateWhatsAppClient,
+        );
+      }
+    },
+    onError: (error, stackTrace) {},
+  );
+
+  var res = await wa.whatsAppBotApi.initIsolate(
+    idClient: "user",
+    isCreateclient: true,
+  );
+
+  var server = await app.listen(port, host);
+
+  logger.success("SERVER ON: http://${server.address.host}:${server.port}");
 }

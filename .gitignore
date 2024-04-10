@@ -7,3 +7,5 @@ database_telegram/
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal
+
+whatsapp-bot-api/

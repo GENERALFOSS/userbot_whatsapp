@@ -10,14 +10,17 @@ environment:
 
 # Add regular dependencies here.
 dependencies:
+  whatsapp_client: ^1.0.18
   general_lib: ^0.0.32
   http: ^1.1.2
   mason_logger: ^0.2.12
   packagex: ^0.0.50
   path: ^1.9.0
-  system_info_fetch: ^0.0.14
-  telegram_client: ^0.8.2
+  system_info_fetch: ^0.0.14 
   translate_client: ^0.0.2
+  alfred: ^1.1.1
+  zxing2: ^0.2.3
+  image: ^4.1.7
   # path: ^1.8.0
 
 dev_dependencies:
