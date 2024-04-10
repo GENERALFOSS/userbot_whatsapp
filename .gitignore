@@ -9,3 +9,4 @@ database_telegram/
 *.sqlite-wal
 
 whatsapp-bot-api/
+temp/
